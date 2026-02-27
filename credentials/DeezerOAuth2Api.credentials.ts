@@ -26,14 +26,14 @@ export class DeezerOAuth2Api implements ICredentialType {
 			displayName: 'Authorization URL',
 			name: 'authUrl',
 			type: 'hidden',
-			default: '={{$self["server"]}}/oauth/auth.php',
+			default: '={{$self["server"]}}/oauth/auth.php?output=json',
 			required: true,
 		},
 		{
 			displayName: 'Access Token URL',
 			name: 'accessTokenUrl',
 			type: 'hidden',
-			default: '={{$self["server"]}}/oauth/access_token.php',
+			default: '={{$self["server"]}}/oauth/access_token.php?output=json',
 			required: true,
 		},
 		{
@@ -59,12 +59,6 @@ export class DeezerOAuth2Api implements ICredentialType {
 				'delete_library',
 				'listening_history',
 			],
-		},
-		{
-			displayName: 'Auth URI Query Parameters',
-			name: 'authQueryParameters',
-			type: 'hidden',
-			default: 'output=json',
 		},
 		{
 			displayName: 'Authentication',
