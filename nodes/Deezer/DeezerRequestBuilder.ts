@@ -1,7 +1,9 @@
-import { IDataObject, IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
+import type { IDataObject, IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
 import { buildDeezerSearchQuery } from './GenericFunctions';
 
-export default {
+type RequestBuilder = (excf: IExecuteFunctions, index: number) => Promise<IHttpRequestOptions>;
+
+const crud: Record<string, Record<string, RequestBuilder>> = {
 	album: {
 		get: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
 			const id = excf.getNodeParameter('id', index) as string;
@@ -148,22 +150,22 @@ export default {
 		},
 	},
 	chart: {
-		get: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
+		get: async (): Promise<IHttpRequestOptions> => {
 			return { method: 'GET', url: '/chart' };
 		},
-		getArtists: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
+		getArtists: async (): Promise<IHttpRequestOptions> => {
 			return { method: 'GET', url: '/chart/artists' };
 		},
-		getAlbums: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
+		getAlbums: async (): Promise<IHttpRequestOptions> => {
 			return { method: 'GET', url: '/chart/albums' };
 		},
-		getTracks: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
+		getTracks: async (): Promise<IHttpRequestOptions> => {
 			return { method: 'GET', url: '/chart/tracks' };
 		},
-		getPlaylists: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
+		getPlaylists: async (): Promise<IHttpRequestOptions> => {
 			return { method: 'GET', url: '/chart/playlists' };
 		},
-		getPodcasts: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
+		getPodcasts: async (): Promise<IHttpRequestOptions> => {
 			return { method: 'GET', url: '/chart/podcasts' };
 		},
 	},
@@ -274,4 +276,6 @@ export default {
 			return { method: 'GET', url: `/search/podcast`, qs: { order, q: query } };
 		},
 	},
-} as any;
+};
+
+export default crud;

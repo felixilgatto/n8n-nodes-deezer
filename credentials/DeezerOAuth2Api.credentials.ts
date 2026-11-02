@@ -1,4 +1,4 @@
-import type { ICredentialType, INodeProperties } from 'n8n-workflow';
+import type { ICredentialType, Icon, INodeProperties } from 'n8n-workflow';
 
 export class DeezerOAuth2Api implements ICredentialType {
 	name = 'deezerOAuth2Api';
@@ -6,6 +6,8 @@ export class DeezerOAuth2Api implements ICredentialType {
 	extends = ['oAuth2Api'];
 
 	displayName = 'Deezer OAuth2 API';
+
+	icon: Icon = { light: 'file:../icons/deezer.svg', dark: 'file:../icons/deezer.svg' };
 
 	documentationUrl = 'https://developers.deezer.com/api';
 

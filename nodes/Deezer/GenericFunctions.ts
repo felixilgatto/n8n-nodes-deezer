@@ -1,5 +1,3 @@
-import type { ClientOAuth2Options, ClientOAuth2TokenData } from '@n8n/client-oauth2';
-import { ClientOAuth2 } from '@n8n/client-oauth2';
 import type {
 	IExecuteFunctions,
 	IHttpRequestOptions,
@@ -7,45 +5,44 @@ import type {
 	IDataObject,
 } from 'n8n-workflow';
 
-import merge from 'lodash/merge';
+export function getAccessToken(credentials: ICredentialDataDecryptedObject): string {
+	const oauthTokenData = (credentials.oauthTokenData ?? {}) as IDataObject;
 
-export async function getAccessToken(credentials: ICredentialDataDecryptedObject): Promise<string> {
-	// Create a new OAuth client with the provided credentials
-	const oAuthClient = new ClientOAuth2({
-		clientId: credentials.clientId,
-		clientSecret: credentials.clientSecret,
-		accessTokenUri: credentials.accessTokenUrl,
-		scopes: (credentials.scope.toString() as string).split(' '),
-		ignoreSSLIssues: credentials.ignoreSSLIssues,
-		authentication: credentials.authentication ?? 'header',
-	} as ClientOAuth2Options);
+	return oauthTokenData.access_token as string;
+}
 
-	// Extract OAuth token data from credentials
-	const oauthTokenData = credentials.oauthTokenData as ClientOAuth2TokenData;
-
-	// Create a token using the OAuth client and provided token data
-	const token = oAuthClient.createToken(oauthTokenData);
-
-	// Return the access token from the token object
-	return token.accessToken;
+/**
+ * Returns a new request where `qs` and `headers` are merged one level deep,
+ * without mutating any of the inputs.
+ */
+export function mergeRequest(
+	base: IHttpRequestOptions,
+	override: Partial<IHttpRequestOptions>,
+): IHttpRequestOptions {
+	return {
+		...base,
+		...override,
+		qs: { ...(base.qs ?? {}), ...(override.qs ?? {}) },
+		headers: { ...(base.headers ?? {}), ...(override.headers ?? {}) },
+	};
 }
 
 export async function requestDeezer(
 	excf: IExecuteFunctions,
 	request: IHttpRequestOptions,
 	all: boolean = true,
-): Promise<any> {
+): Promise<IDataObject> {
 	// Make the initial request
 	const response = await excf.helpers.httpRequest(request);
 
 	// If 'all' is true, fetch additional data
-	if (all) {
+	if (all && response.next) {
 		let nextURL = new URL(response.next);
 
 		// Continue fetching until no more 'next' URLs or data exceeds 1000 items
 		while (true) {
 			// Create a new request based on the 'next' URL
-			const nextRequest = merge(request, {
+			const nextRequest = mergeRequest(request, {
 				url: nextURL.pathname,
 				qs: Object.fromEntries(nextURL.searchParams),
 			});
@@ -77,10 +74,10 @@ export async function requestDeezer(
 	return response;
 }
 
-export function buildDeezerSearchQuery(keyword: String, filters: IDataObject): String {
+export function buildDeezerSearchQuery(keyword: string, filters: IDataObject): string {
 	let query = keyword.toString();
 
-	for (let [key, value] of Object.entries(filters)) {
+	for (const [key, value] of Object.entries(filters)) {
 		query += ` ${key}:"${value}"`;
 	}
 

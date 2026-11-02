@@ -1,15 +1,16 @@
 import {
+	NodeApiError,
+	NodeConnectionTypes,
 	type IExecuteFunctions,
-	type IDataObject,
+	type JsonObject,
 	type INodeExecutionData,
 	type INodeType,
 	type INodeTypeDescription,
 	type IHttpRequestOptions,
 } from 'n8n-workflow';
-import { merge } from 'lodash';
 
 import crud from './DeezerRequestBuilder';
-import { getAccessToken, requestDeezer } from './GenericFunctions';
+import { getAccessToken, mergeRequest, requestDeezer } from './GenericFunctions';
 
 const BASE_URL = 'https://api.deezer.com';
 const DEFAULT_OFFSET = 0;
@@ -19,7 +20,7 @@ export class Deezer implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Deezer',
 		name: 'deezer',
-		icon: 'file:deezer.svg',
+		icon: { light: 'file:../../icons/deezer.svg', dark: 'file:../../icons/deezer.svg' },
 		group: ['input'],
 		version: 1,
 		description: 'Access public song data via the Deezer API',
@@ -27,8 +28,9 @@ export class Deezer implements INodeType {
 		defaults: {
 			name: 'Deezer',
 		},
-		inputs: ['main'],
-		outputs: ['main'],
+		usableAsTool: true,
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
 				name: 'deezerOAuth2Api',
@@ -600,6 +602,15 @@ export class Deezer implements INodeType {
 				},
 				options: [
 					{
+						displayName: 'With Album',
+						name: 'album',
+						type: 'string',
+						typeOptions: {
+							multipleValues: false,
+						},
+						default: '',
+					},
+					{
 						displayName: 'With Artist',
 						name: 'artist',
 						type: 'string',
@@ -609,32 +620,13 @@ export class Deezer implements INodeType {
 						default: '',
 					},
 					{
-						displayName: 'With Album',
-						name: 'album',
-						type: 'string',
-						required: true,
+						displayName: 'With Duration Maximum',
+						name: 'dur_max',
+						type: 'number',
 						typeOptions: {
 							multipleValues: false,
 						},
-						default: '',
-					},
-					{
-						displayName: 'With Track',
-						name: 'track',
-						type: 'string',
-						typeOptions: {
-							multipleValues: false,
-						},
-						default: '',
-					},
-					{
-						displayName: 'With Label',
-						name: 'label',
-						type: 'string',
-						typeOptions: {
-							multipleValues: false,
-						},
-						default: '',
+						default: 999,
 					},
 					{
 						displayName: 'With Duration Minimum',
@@ -646,8 +638,17 @@ export class Deezer implements INodeType {
 						default: 0,
 					},
 					{
-						displayName: 'With Duration Maximum',
-						name: 'dur_max',
+						displayName: 'With Label',
+						name: 'label',
+						type: 'string',
+						typeOptions: {
+							multipleValues: false,
+						},
+						default: '',
+					},
+					{
+						displayName: 'With Tempo(BPM) Maximum',
+						name: 'bpm_max',
 						type: 'number',
 						typeOptions: {
 							multipleValues: false,
@@ -664,13 +665,13 @@ export class Deezer implements INodeType {
 						default: 0,
 					},
 					{
-						displayName: 'With Tempo(BPM) Maximum',
-						name: 'bpm_max',
-						type: 'number',
+						displayName: 'With Track',
+						name: 'track',
+						type: 'string',
 						typeOptions: {
 							multipleValues: false,
 						},
-						default: 999,
+						default: '',
 					},
 				],
 			},
@@ -735,7 +736,7 @@ export class Deezer implements INodeType {
 		const resource = this.getNodeParameter('resource', 0);
 
 		const credentials = await this.getCredentials('deezerOAuth2Api');
-		const accessToken = await getAccessToken(credentials);
+		const accessToken = getAccessToken(credentials);
 
 		const baseRequestOptions: IHttpRequestOptions = {
 			baseURL: BASE_URL,
@@ -749,24 +750,24 @@ export class Deezer implements INodeType {
 			url: '',
 		};
 
-		request = merge(baseRequestOptions, { qs: { access_token: accessToken } });
+		request = mergeRequest(baseRequestOptions, { qs: { access_token: accessToken } });
 
 		const returnAll = this.getNodeParameter('returnAll', 0, false);
 		const offset = this.getNodeParameter('offset', 0, DEFAULT_OFFSET);
 		const limit = this.getNodeParameter('limit', 0, DEFAULT_LIMIT);
 
-		request = merge(request, { qs: { index: offset, limit: limit } });
+		request = mergeRequest(request, { qs: { index: offset, limit: limit } });
 
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const operationRequest: IHttpRequestOptions = await crud[resource][operation](this, i);
 
-				request = merge(request, operationRequest);
+				const itemRequest = mergeRequest(request, operationRequest);
 
-				let responseData = await requestDeezer(this, request, returnAll);
+				const responseData = await requestDeezer(this, itemRequest, returnAll);
 
 				const executionData = this.helpers.constructExecutionMetaData(
-					this.helpers.returnJsonArray(responseData as IDataObject[]),
+					this.helpers.returnJsonArray(responseData),
 					{ itemData: { item: i } },
 				);
 
@@ -780,7 +781,7 @@ export class Deezer implements INodeType {
 					returnData.push(...executionData);
 					continue;
 				}
-				throw error;
+				throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 			}
 		}
 

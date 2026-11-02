@@ -14,15 +14,22 @@ Before using this node, make sure you have the following:
 https://docs.n8n.io/integrations/community-nodes/installation/gui-install/
 
 ### Developer
-1. Install n8n by following the instructions in the [n8n documentation](https://docs.n8n.io/getting-started/installation).
-2. Clone or download this repository.
-3. Navigate to the repository folder and run the following command to install the dependencies:
+This project uses the official [`@n8n/node-cli`](https://www.npmjs.com/package/@n8n/node-cli) tooling. Node.js 24+ is recommended.
 
 ```bash
+git clone https://github.com/felixcapuano/n8n-nodes-deezer.git
+cd n8n-nodes-deezer
 npm install
+npm run dev      # starts a local n8n with this node loaded and hot reload
 ```
 
-4. Copy the entire folder `deezer` to your n8n custom nodes folder. The default location for the custom nodes folder is `~/.n8n/custom/`.
+Other scripts:
+
+| Script | Description |
+|---|---|
+| `npm run build` | Compile to `dist/` |
+| `npm run lint` / `npm run lint:fix` | Lint with the n8n community node rules |
+| `npm run release` | Bump version, tag and publish to npm |
 
 ## Usage
 
@@ -74,4 +81,4 @@ If you encounter any issues or have any questions, please open an issue in the [
 
 ## License
 
-[MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+[MIT](LICENSE)
