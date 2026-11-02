@@ -4,74 +4,86 @@ This is a custom node for [n8n](https://n8n.io/) that allows you to interact wit
 
 ## Prerequisites
 
-Before using this node, make sure you have the following:
+- **Nothing** for the public catalog: search, albums, artists, tracks, playlists, podcasts, charts and public user profiles work without any account (set *Authentication* to **None**).
+- **A Deezer developer app** (App ID + Secret) for operations on your own account: your profile, favorites, listening history, creating/deleting playlists and adding/removing tracks.
 
-- An active Deezer account
-- Access to the Deezer API (you can obtain this by creating an application on the [Deezer for Developers](https://developers.deezer.com/) website)
+> ⚠️ **About OAuth2 operations**
+> - Deezer is **not accepting new developer applications** since 2025, because of API abuse ([official answer, Oct 2025](https://en.deezercommunity.com/features-feedback-44/api-auth-impossible-80857)).
+> - The maintainer's own existing app can still complete the OAuth flow, but every authenticated call now returns `OAuthException — Application error (code 50)`, and other developers report existing apps that stopped working.
+> - As a result, the operations marked 🔒 below could **not be validated against the live API** for this release: they follow the Deezer API documentation and were tested with intercepted requests only.
+> - All public operations (Authentication **None**) are validated against the live API and need no Deezer app at all.
 
 ## Installation
 ### User
 https://docs.n8n.io/integrations/community-nodes/installation/gui-install/
 
 ### Developer
-1. Install n8n by following the instructions in the [n8n documentation](https://docs.n8n.io/getting-started/installation).
-2. Clone or download this repository.
-3. Navigate to the repository folder and run the following command to install the dependencies:
+This project uses the official [`@n8n/node-cli`](https://www.npmjs.com/package/@n8n/node-cli) tooling. Node.js 24+ is recommended.
 
 ```bash
+git clone https://github.com/felixilgatto/n8n-nodes-deezer.git
+cd n8n-nodes-deezer
 npm install
+npm run dev      # starts a local n8n with this node loaded and hot reload
 ```
 
-4. Copy the entire folder `deezer` to your n8n custom nodes folder. The default location for the custom nodes folder is `~/.n8n/custom/`.
+Other scripts:
+
+| Script | Description |
+|---|---|
+| `npm run build` | Compile to `dist/` |
+| `npm run lint` / `npm run lint:fix` | Lint with the n8n community node rules |
+| `npm run release` | Bump version, tag and publish to npm |
 
 ## Usage
 
-1. Open n8n in your browser.
-2. Create a new workflow or open an existing one.
-3. Drag and drop the "Deezer" node from the nodes panel onto the canvas.
-4. Double-click on the node to configure it.
-5. Click on the credentials field and select "Add new Deezer API credentials".
-6. Enter your Deezer API credentials (client ID and client secret) and click "Create".
-7. Select the desired operation from the "Operation" dropdown list.
-8. Configure the remaining fields based on the selected operation.
-9. Click "Execute Node" to run the workflow.
+1. Add the **Deezer** node to a workflow.
+2. Choose the **Authentication**:
+   - **None**: public data only, no credentials needed.
+   - **OAuth2**: select or create *Deezer OAuth2 API* credentials (see below).
+3. Pick a **Resource** and an **Operation**, fill in the fields and execute.
+
+Operations that need an account (*Playlist → Create / Delete / Add Tracks / Remove Track*, *User → Get Recent Tracks*, *User → Return My User*) fail with a clear error when Authentication is **None**.
 
 ## Credentials
 
-To use the Deezer API node, you need to create Deezer API credentials. Here's how:
+Only needed with **OAuth2** authentication.
 
-1. Open n8n in your browser.
-2. Click on the "Credentials" tab in the top menu.
-3. Click on the "Create New Credentials" button.
-4. Select "Deezer API" from the dropdown list.
-5. Enter a name for the credentials (e.g., "Deezer API").
-6. Enter your Deezer API client ID and client secret.
-7. Click "Create" to save the credentials.
+1. On [Deezer for Developers](https://developers.deezer.com/myapps), open your app and set its *Redirect URL* to the OAuth callback URL shown by n8n in the credential dialog.
+2. In n8n, create a **Deezer OAuth2 API** credential and paste your **App ID** (Client ID) and **Secret Key** (Client Secret).
+3. Pick the scopes you need and click **Connect my account**.
 
 ## Node Reference
 
-### Deezer
+🔒 = requires **OAuth2** authentication.
 
-The Deezer node has the following operations:
+| Resource | Operations |
+|---|---|
+| **Album** | Get, Get Tracks, Get Fans, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Artist** | Get, Get Albums, Get Top Tracks, Get Related Artists, Get Radio, Get Playlists, Get Fans, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Chart** | Get All, Get Tracks, Get Albums, Get Artists, Get Playlists, Get Podcasts (optionally for one genre) |
+| **Editorial** | Get Many, Get, Get Selection, Get Chart, Get Releases |
+| **Episode** | Get |
+| **Genre** | Get Many, Get, Get Artists, Get Podcasts, Get Radios |
+| **Playlist** | Get, Get Tracks, Get Fans, Get Radio, Search, Create 🔒, Update 🔒, Delete 🔒, Add Tracks 🔒, Remove Tracks 🔒, Reorder Tracks 🔒, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Podcast** | Get, Get Episodes, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Radio** | Get Many, Get, Get Tracks, Get Genres, Get Lists, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Track** | Get, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **User** | Get, Get Playlists, Get Favorite Tracks/Albums/Artists/Podcasts/Radios, Get Flow, Get Followers, Get Followings, Get Charts, Search, Get Recent Tracks 🔒, Get Recommendations 🔒, Get Search History 🔒, Get Permissions 🔒, Follow 🔒, Unfollow 🔒 |
 
-- **Search**: Search for tracks, albums, artists, or playlists.
-- **Get Track**: Retrieve details for a specific track.
-- **Get Album**: Retrieve details for a specific album.
-- **Get Artist**: Retrieve details for a specific artist.
-- **Get Playlist**: Retrieve details for a specific playlist.
-- **Get User**: Retrieve details for a specific user.
-- And more...
+List operations support **Return All** (up to 1000 items) or **Offset/Limit**. Track, album, artist, playlist and podcast searches support ordering and advanced filters (artist, album, track, label, duration, BPM).
 
-For detailed information on each operation and their respective input/output parameters, refer to the [Deezer API documentation](https://developers.deezer.com/api).
+See the [Deezer API documentation](https://developers.deezer.com/api) for the returned fields.
 
 ## Limitations
 
-Please note that this node currently supports a subset of the Deezer API functionality. If you require additional features, feel free to contribute to the project or submit a feature request.
+- Deezer reports errors with HTTP 200; the node turns them into regular n8n errors (e.g. `Deezer: no data — DataException (code 800)`).
+- Some lists are capped or filtered by Deezer itself (e.g. search results stop around a few hundred items, private followers are hidden), so `total` can be larger than what can be fetched.
 
 ## Support
 
-If you encounter any issues or have any questions, please open an issue in the [GitHub repository](https://github.com/n8n-io/n8n).
+If you encounter any issues or have any questions, please open an issue in the [GitHub repository](https://github.com/felixilgatto/n8n-nodes-deezer/issues).
 
 ## License
 
-[MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+[MIT](LICENSE)
