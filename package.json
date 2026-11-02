@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-deezer",
-	"version": "0.4.2",
+	"version": "0.5.0",
 	"description": "n8n community node for the Deezer API: search and read albums, artists, playlists, podcasts, tracks, charts and user data.",
 	"keywords": [
 		"n8n-community-node-package"
