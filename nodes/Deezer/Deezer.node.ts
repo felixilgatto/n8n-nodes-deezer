@@ -1,5 +1,6 @@
 import {
 	NodeApiError,
+	NodeOperationError,
 	NodeConnectionTypes,
 	type IExecuteFunctions,
 	type JsonObject,
@@ -16,13 +17,20 @@ const BASE_URL = 'https://api.deezer.com';
 const DEFAULT_OFFSET = 0;
 const DEFAULT_LIMIT = 50;
 
+/** Operations that only work with an authenticated Deezer user */
+const AUTH_REQUIRED_OPERATIONS: Record<string, string[]> = {
+	playlist: ['create', 'delete', 'add', 'remove'],
+	user: ['getRecentTracks'],
+};
+
 export class Deezer implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Deezer',
 		name: 'deezer',
 		icon: { light: 'file:../../icons/deezer.svg', dark: 'file:../../icons/deezer.svg' },
 		group: ['input'],
-		version: 1,
+		version: [1, 1.1],
+		defaultVersion: 1.1,
 		description: 'Access public song data via the Deezer API',
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		defaults: {
@@ -35,9 +43,63 @@ export class Deezer implements INodeType {
 			{
 				name: 'deezerOAuth2Api',
 				required: true,
+				displayOptions: {
+					show: {
+						authentication: ['oAuth2'],
+					},
+				},
 			},
 		],
 		properties: [
+			// ----------------------------------------------------------------
+			//         Authentication
+			// ----------------------------------------------------------------
+			{
+				displayName: 'Authentication',
+				name: 'authentication',
+				type: 'options',
+				options: [
+					{
+						name: 'None',
+						value: 'none',
+						description: 'Public catalog only (search, albums, artists, charts, etc.)',
+					},
+					{
+						name: 'OAuth2',
+						value: 'oAuth2',
+						description: 'Required for your own account and to modify playlists',
+					},
+				],
+				default: 'oAuth2',
+				displayOptions: {
+					show: {
+						'@version': [1],
+					},
+				},
+			},
+			{
+				displayName: 'Authentication',
+				name: 'authentication',
+				type: 'options',
+				options: [
+					{
+						name: 'None',
+						value: 'none',
+						description: 'Public catalog only (search, albums, artists, charts, etc.)',
+					},
+					{
+						name: 'OAuth2',
+						value: 'oAuth2',
+						description: 'Required for your own account and to modify playlists',
+					},
+				],
+				default: 'none',
+				displayOptions: {
+					show: {
+						'@version': [1.1],
+					},
+				},
+			},
 			// ----------------------------------------------------------------
 			//         Resource to Operate on
 			// ----------------------------------------------------------------
@@ -447,6 +509,7 @@ export class Deezer implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['user'],
+						authentication: ['oAuth2'],
 					},
 				},
 				description: 'Whether to return the logged in user or a specific user',
@@ -460,6 +523,24 @@ export class Deezer implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['album', 'artist', 'playlist', 'track', 'podcast'],
+					},
+					hide: {
+						operation: ['search', 'create'],
+					},
+				},
+				placeholder: '1234567',
+			},
+			{
+				displayName: 'User ID',
+				name: 'userId',
+				type: 'string',
+				default: '',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['user'],
+						returnMyUser: [false],
+						authentication: ['oAuth2'],
 					},
 					hide: {
 						operation: ['search'],
@@ -476,7 +557,7 @@ export class Deezer implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['user'],
-						returnMyUser: [false],
+						authentication: ['none'],
 					},
 					hide: {
 						operation: ['search'],
@@ -732,11 +813,10 @@ export class Deezer implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 		let request: IHttpRequestOptions;
 
-		const operation = this.getNodeParameter('operation', 0);
-		const resource = this.getNodeParameter('resource', 0);
+		const operation = this.getNodeParameter('operation', 0) as string;
+		const resource = this.getNodeParameter('resource', 0) as string;
 
-		const credentials = await this.getCredentials('deezerOAuth2Api');
-		const accessToken = getAccessToken(credentials);
+		const authentication = this.getNodeParameter('authentication', 0, 'oAuth2') as string;
 
 		const baseRequestOptions: IHttpRequestOptions = {
 			baseURL: BASE_URL,
@@ -750,7 +830,20 @@ export class Deezer implements INodeType {
 			url: '',
 		};
 
-		request = mergeRequest(baseRequestOptions, { qs: { access_token: accessToken } });
+		if (authentication === 'oAuth2') {
+			const credentials = await this.getCredentials('deezerOAuth2Api');
+			request = mergeRequest(baseRequestOptions, {
+				qs: { access_token: getAccessToken(credentials) },
+			});
+		} else if (AUTH_REQUIRED_OPERATIONS[resource]?.includes(operation)) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`The "${operation}" operation on "${resource}" requires a Deezer account`,
+				{ description: "Set 'Authentication' to 'OAuth2' and select Deezer credentials" },
+			);
+		} else {
+			request = baseRequestOptions;
+		}
 
 		const returnAll = this.getNodeParameter('returnAll', 0, false);
 		const offset = this.getNodeParameter('offset', 0, DEFAULT_OFFSET);
@@ -766,8 +859,14 @@ export class Deezer implements INodeType {
 
 				const responseData = await requestDeezer(this, itemRequest, returnAll);
 
+				// Write endpoints (and a few others) answer with a bare boolean
+				const json =
+					typeof responseData === 'object' && responseData !== null
+						? responseData
+						: { success: responseData };
+
 				const executionData = this.helpers.constructExecutionMetaData(
-					this.helpers.returnJsonArray(responseData),
+					this.helpers.returnJsonArray(json),
 					{ itemData: { item: i } },
 				);
 

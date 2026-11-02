@@ -4,10 +4,10 @@ This is a custom node for [n8n](https://n8n.io/) that allows you to interact wit
 
 ## Prerequisites
 
-Before using this node, make sure you have the following:
+- **Nothing** for the public catalog: search, albums, artists, tracks, playlists, podcasts, charts and public user profiles work without any account (set *Authentication* to **None**).
+- **A Deezer developer app** (App ID + Secret) for operations on your own account: your profile, favorites, listening history, creating/deleting playlists and adding/removing tracks.
 
-- An active Deezer account
-- Access to the Deezer API (you can obtain this by creating an application on the [Deezer for Developers](https://developers.deezer.com/) website)
+> ⚠️ Deezer is currently **not accepting new developer applications** ([official answer, Oct 2025](https://en.deezercommunity.com/features-feedback-44/api-auth-impossible-80857)). Existing apps keep working. If you don't have one, you can still use every public operation.
 
 ## Installation
 ### User
@@ -33,27 +33,21 @@ Other scripts:
 
 ## Usage
 
-1. Open n8n in your browser.
-2. Create a new workflow or open an existing one.
-3. Drag and drop the "Deezer" node from the nodes panel onto the canvas.
-4. Double-click on the node to configure it.
-5. Click on the credentials field and select "Add new Deezer API credentials".
-6. Enter your Deezer API credentials (client ID and client secret) and click "Create".
-7. Select the desired operation from the "Operation" dropdown list.
-8. Configure the remaining fields based on the selected operation.
-9. Click "Execute Node" to run the workflow.
+1. Add the **Deezer** node to a workflow.
+2. Choose the **Authentication**:
+   - **None**: public data only, no credentials needed.
+   - **OAuth2**: select or create *Deezer OAuth2 API* credentials (see below).
+3. Pick a **Resource** and an **Operation**, fill in the fields and execute.
+
+Operations that need an account (*Playlist → Create / Delete / Add Tracks / Remove Track*, *User → Get Recent Tracks*, *User → Return My User*) fail with a clear error when Authentication is **None**.
 
 ## Credentials
 
-To use the Deezer API node, you need to create Deezer API credentials. Here's how:
+Only needed with **OAuth2** authentication.
 
-1. Open n8n in your browser.
-2. Click on the "Credentials" tab in the top menu.
-3. Click on the "Create New Credentials" button.
-4. Select "Deezer API" from the dropdown list.
-5. Enter a name for the credentials (e.g., "Deezer API").
-6. Enter your Deezer API client ID and client secret.
-7. Click "Create" to save the credentials.
+1. On [Deezer for Developers](https://developers.deezer.com/myapps), open your app and set its *Redirect URL* to the OAuth callback URL shown by n8n in the credential dialog.
+2. In n8n, create a **Deezer OAuth2 API** credential and paste your **App ID** (Client ID) and **Secret Key** (Client Secret).
+3. Pick the scopes you need and click **Connect my account**.
 
 ## Node Reference
 
@@ -77,7 +71,7 @@ Please note that this node currently supports a subset of the Deezer API functio
 
 ## Support
 
-If you encounter any issues or have any questions, please open an issue in the [GitHub repository](https://github.com/n8n-io/n8n).
+If you encounter any issues or have any questions, please open an issue in the [GitHub repository](https://github.com/felixcapuano/n8n-nodes-deezer/issues).
 
 ## License
 

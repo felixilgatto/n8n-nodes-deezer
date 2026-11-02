@@ -1,6 +1,13 @@
 import type { IDataObject, IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
 import { buildDeezerSearchQuery } from './GenericFunctions';
 
+/** `me` when the node returns the authenticated user, otherwise the given User ID */
+function getUserId(excf: IExecuteFunctions, index: number): string {
+	const returnMyUser = excf.getNodeParameter('returnMyUser', index, false) as boolean;
+
+	return returnMyUser ? 'me' : (excf.getNodeParameter('userId', index) as string);
+}
+
 type RequestBuilder = (excf: IExecuteFunctions, index: number) => Promise<IHttpRequestOptions>;
 
 const crud: Record<string, Record<string, RequestBuilder>> = {
@@ -86,10 +93,9 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			return { method: 'GET', url: `/playlist/${id}` };
 		},
 		create: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
-			const id = excf.getNodeParameter('id', index) as string;
 			const name = excf.getNodeParameter('name', index) as string;
 
-			return { method: 'POST', url: `user/me/playlists/${id}`, qs: { title: name } };
+			return { method: 'POST', url: '/user/me/playlists', qs: { title: name } };
 		},
 		delete: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
 			const id = excf.getNodeParameter('id', index) as string;
@@ -154,31 +160,29 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			return { method: 'GET', url: '/chart' };
 		},
 		getArtists: async (): Promise<IHttpRequestOptions> => {
-			return { method: 'GET', url: '/chart/artists' };
+			return { method: 'GET', url: '/chart/0/artists' };
 		},
 		getAlbums: async (): Promise<IHttpRequestOptions> => {
-			return { method: 'GET', url: '/chart/albums' };
+			return { method: 'GET', url: '/chart/0/albums' };
 		},
 		getTracks: async (): Promise<IHttpRequestOptions> => {
-			return { method: 'GET', url: '/chart/tracks' };
+			return { method: 'GET', url: '/chart/0/tracks' };
 		},
 		getPlaylists: async (): Promise<IHttpRequestOptions> => {
-			return { method: 'GET', url: '/chart/playlists' };
+			return { method: 'GET', url: '/chart/0/playlists' };
 		},
 		getPodcasts: async (): Promise<IHttpRequestOptions> => {
-			return { method: 'GET', url: '/chart/podcasts' };
+			return { method: 'GET', url: '/chart/0/podcasts' };
 		},
 	},
 	user: {
 		get: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}` };
 		},
 		getPlaylists: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/playlists` };
 		},
@@ -186,8 +190,7 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			excf: IExecuteFunctions,
 			index: number,
 		): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/tracks` };
 		},
@@ -195,8 +198,7 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			excf: IExecuteFunctions,
 			index: number,
 		): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/albums` };
 		},
@@ -204,8 +206,7 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			excf: IExecuteFunctions,
 			index: number,
 		): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/artists` };
 		},
@@ -213,8 +214,7 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			excf: IExecuteFunctions,
 			index: number,
 		): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/podcasts` };
 		},
@@ -222,26 +222,22 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			excf: IExecuteFunctions,
 			index: number,
 		): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/radios` };
 		},
 		getFlow: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/flow` };
 		},
 		getFollowings: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/followings` };
 		},
 		getFollowers: async (excf: IExecuteFunctions, index: number): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/followers` };
 		},
@@ -249,8 +245,7 @@ const crud: Record<string, Record<string, RequestBuilder>> = {
 			excf: IExecuteFunctions,
 			index: number,
 		): Promise<IHttpRequestOptions> => {
-			const returnMyUser = excf.getNodeParameter('returnMyUser', index) as string;
-			const id = returnMyUser ? 'me' : excf.getNodeParameter('userId', index);
+			const id = getUserId(excf, index);
 
 			return { method: 'GET', url: `/user/${id}/history` };
 		},
