@@ -51,23 +51,30 @@ Only needed with **OAuth2** authentication.
 
 ## Node Reference
 
-### Deezer
+🔒 = requires **OAuth2** authentication.
 
-The Deezer node has the following operations:
+| Resource | Operations |
+|---|---|
+| **Album** | Get, Get Tracks, Get Fans, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Artist** | Get, Get Albums, Get Top Tracks, Get Related Artists, Get Radio, Get Playlists, Get Fans, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Chart** | Get All, Get Tracks, Get Albums, Get Artists, Get Playlists, Get Podcasts (optionally for one genre) |
+| **Editorial** | Get Many, Get, Get Selection, Get Chart, Get Releases |
+| **Episode** | Get |
+| **Genre** | Get Many, Get, Get Artists, Get Podcasts, Get Radios |
+| **Playlist** | Get, Get Tracks, Get Fans, Get Radio, Search, Create 🔒, Update 🔒, Delete 🔒, Add Tracks 🔒, Remove Tracks 🔒, Reorder Tracks 🔒, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Podcast** | Get, Get Episodes, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Radio** | Get Many, Get, Get Tracks, Get Genres, Get Lists, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **Track** | Get, Search, Add to Favorites 🔒, Remove From Favorites 🔒 |
+| **User** | Get, Get Playlists, Get Favorite Tracks/Albums/Artists/Podcasts/Radios, Get Flow, Get Followers, Get Followings, Get Charts, Search, Get Recent Tracks 🔒, Get Recommendations 🔒, Get Search History 🔒, Get Permissions 🔒, Follow 🔒, Unfollow 🔒 |
 
-- **Search**: Search for tracks, albums, artists, or playlists.
-- **Get Track**: Retrieve details for a specific track.
-- **Get Album**: Retrieve details for a specific album.
-- **Get Artist**: Retrieve details for a specific artist.
-- **Get Playlist**: Retrieve details for a specific playlist.
-- **Get User**: Retrieve details for a specific user.
-- And more...
+List operations support **Return All** (up to 1000 items) or **Offset/Limit**. Track, album, artist, playlist and podcast searches support ordering and advanced filters (artist, album, track, label, duration, BPM).
 
-For detailed information on each operation and their respective input/output parameters, refer to the [Deezer API documentation](https://developers.deezer.com/api).
+See the [Deezer API documentation](https://developers.deezer.com/api) for the returned fields.
 
 ## Limitations
 
-Please note that this node currently supports a subset of the Deezer API functionality. If you require additional features, feel free to contribute to the project or submit a feature request.
+- Deezer reports errors with HTTP 200; the node turns them into regular n8n errors (e.g. `Deezer: no data — DataException (code 800)`).
+- Some lists are capped or filtered by Deezer itself (e.g. search results stop around a few hundred items, private followers are hidden), so `total` can be larger than what can be fetched.
 
 ## Support
 

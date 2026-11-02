@@ -1,9 +1,14 @@
-import type {
-	IExecuteFunctions,
-	IHttpRequestOptions,
-	ICredentialDataDecryptedObject,
-	IDataObject,
+import {
+	NodeApiError,
+	type IExecuteFunctions,
+	type IHttpRequestOptions,
+	type ICredentialDataDecryptedObject,
+	type IDataObject,
+	type JsonObject,
 } from 'n8n-workflow';
+
+/** Max items fetched by "Return All" before stopping (the `next` URL is kept) */
+const RETURN_ALL_MAX_ITEMS = 1000;
 
 export function getAccessToken(credentials: ICredentialDataDecryptedObject): string {
 	const oauthTokenData = (credentials.oauthTokenData ?? {}) as IDataObject;
@@ -27,19 +32,39 @@ export function mergeRequest(
 	};
 }
 
+/**
+ * Deezer answers errors with HTTP 200 and a body like
+ * `{ "error": { "type": "DataException", "message": "no data", "code": 800 } }`.
+ */
+async function httpRequestDeezer(excf: IExecuteFunctions, request: IHttpRequestOptions) {
+	const response = await excf.helpers.httpRequest(request);
+
+	if (typeof response === 'object' && response !== null && response.error) {
+		const error = response.error as IDataObject;
+
+		throw new NodeApiError(excf.getNode(), error as JsonObject, {
+			message: `Deezer: ${error.message ?? 'Unknown error'}`,
+			description: `${error.type ?? 'Error'}${error.code !== undefined ? ` (code ${error.code})` : ''}`,
+			httpCode: String(error.code ?? ''),
+		});
+	}
+
+	return response;
+}
+
 export async function requestDeezer(
 	excf: IExecuteFunctions,
 	request: IHttpRequestOptions,
 	all: boolean = true,
 ): Promise<IDataObject> {
 	// Make the initial request
-	const response = await excf.helpers.httpRequest(request);
+	const response = await httpRequestDeezer(excf, request);
 
 	// If 'all' is true, fetch additional data
 	if (all && response.next) {
 		let nextURL = new URL(response.next);
 
-		// Continue fetching until no more 'next' URLs or data exceeds 1000 items
+		// Continue fetching until no more 'next' URLs or the item cap is reached
 		while (true) {
 			// Create a new request based on the 'next' URL
 			const nextRequest = mergeRequest(request, {
@@ -48,7 +73,7 @@ export async function requestDeezer(
 			});
 
 			// Make the next request
-			const nextResponse = await excf.helpers.httpRequest(nextRequest);
+			const nextResponse = await httpRequestDeezer(excf, nextRequest);
 
 			// Append the data from the next response to the original response
 			response.data.push(...nextResponse.data);
@@ -59,8 +84,8 @@ export async function requestDeezer(
 				break;
 			}
 
-			// Check if the total data exceeds 1000 items
-			if (response.data.length > 1000) {
+			// Stop at the item cap
+			if (response.data.length >= RETURN_ALL_MAX_ITEMS) {
 				response.next = nextResponse.next; // Store 'next' URL for potential future requests
 				break;
 			}
@@ -78,6 +103,8 @@ export function buildDeezerSearchQuery(keyword: string, filters: IDataObject): s
 	let query = keyword.toString();
 
 	for (const [key, value] of Object.entries(filters)) {
+		// Skip filters added in the UI but left empty
+		if (value === '' || value === undefined || value === null) continue;
 		query += ` ${key}:"${value}"`;
 	}
 
