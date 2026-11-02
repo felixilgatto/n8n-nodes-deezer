@@ -7,7 +7,11 @@ This is a custom node for [n8n](https://n8n.io/) that allows you to interact wit
 - **Nothing** for the public catalog: search, albums, artists, tracks, playlists, podcasts, charts and public user profiles work without any account (set *Authentication* to **None**).
 - **A Deezer developer app** (App ID + Secret) for operations on your own account: your profile, favorites, listening history, creating/deleting playlists and adding/removing tracks.
 
-> ⚠️ Deezer is currently **not accepting new developer applications** ([official answer, Oct 2025](https://en.deezercommunity.com/features-feedback-44/api-auth-impossible-80857)). Existing apps keep working. If you don't have one, you can still use every public operation.
+> ⚠️ **About OAuth2 operations**
+> - Deezer is **not accepting new developer applications** since 2025, because of API abuse ([official answer, Oct 2025](https://en.deezercommunity.com/features-feedback-44/api-auth-impossible-80857)).
+> - The maintainer's own existing app can still complete the OAuth flow, but every authenticated call now returns `OAuthException — Application error (code 50)`, and other developers report existing apps that stopped working.
+> - As a result, the operations marked 🔒 below could **not be validated against the live API** for this release: they follow the Deezer API documentation and were tested with intercepted requests only.
+> - All public operations (Authentication **None**) are validated against the live API and need no Deezer app at all.
 
 ## Installation
 ### User
@@ -17,7 +21,7 @@ https://docs.n8n.io/integrations/community-nodes/installation/gui-install/
 This project uses the official [`@n8n/node-cli`](https://www.npmjs.com/package/@n8n/node-cli) tooling. Node.js 24+ is recommended.
 
 ```bash
-git clone https://github.com/felixcapuano/n8n-nodes-deezer.git
+git clone https://github.com/felixilgatto/n8n-nodes-deezer.git
 cd n8n-nodes-deezer
 npm install
 npm run dev      # starts a local n8n with this node loaded and hot reload
@@ -78,7 +82,7 @@ See the [Deezer API documentation](https://developers.deezer.com/api) for the re
 
 ## Support
 
-If you encounter any issues or have any questions, please open an issue in the [GitHub repository](https://github.com/felixcapuano/n8n-nodes-deezer/issues).
+If you encounter any issues or have any questions, please open an issue in the [GitHub repository](https://github.com/felixilgatto/n8n-nodes-deezer/issues).
 
 ## License
 

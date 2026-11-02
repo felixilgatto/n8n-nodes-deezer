@@ -6,14 +6,14 @@
 		"n8n-community-node-package"
 	],
 	"license": "MIT",
-	"homepage": "https://github.com/felixcapuano/n8n-nodes-deezer",
+	"homepage": "https://github.com/felixilgatto/n8n-nodes-deezer",
 	"author": {
 		"name": "felixc",
 		"email": "essais2615@gmail.com"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/felixcapuano/n8n-nodes-deezer.git"
+		"url": "https://github.com/felixilgatto/n8n-nodes-deezer.git"
 	},
 	"scripts": {
 		"build": "n8n-node build",
